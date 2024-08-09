@@ -35,7 +35,7 @@ public class QueryUtils {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	public static List<Field> getParameterFields(AbstractQuery<?,?,?,?> abstractQuery,
+	public static List<Field> getParameterFields(AbstractQuery<?,?,?,?,?> abstractQuery,
 			Class<? extends QueryType> classQuery) {
 		return FieldUtils.getAllFieldsList(classQuery).stream().filter(f->abstractQuery.filterValidation(f)).toList();
 	}

@@ -19,6 +19,7 @@ import io.github.lorisdemicheli.hibernate_query.annotation.OrderBy;
 import io.github.lorisdemicheli.hibernate_query.utils.QueryContext;
 import io.github.lorisdemicheli.hibernate_query.utils.QueryUtils;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.From;
@@ -27,7 +28,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 public class CriteriaQuery<T>
-		extends AbstractQuery<T, TypedQuery<T>, TypedQuery<Long>, TypedQuery<Boolean>> {
+		extends AbstractQuery<T, TypedQuery<T>, TypedQuery<Long>, TypedQuery<Boolean>, TypedQuery<Tuple>> {
 
 	private Map<String, From<?, ?>> alias;
 
@@ -38,14 +39,16 @@ public class CriteriaQuery<T>
 
 	@Override
 	public TypedQuery<T> buildSelect(QueryType<T> queryFilter) {
-		jakarta.persistence.criteria.CriteriaQuery<T> critieraQuery = critieraBuilder(queryFilter.getType(), queryFilter);
+		jakarta.persistence.criteria.CriteriaQuery<T> critieraQuery = critieraBuilder(queryFilter.getType(),
+				queryFilter);
 		return entityManager.createQuery(critieraQuery);
 	}
 
 	@Override
 	public TypedQuery<Long> buildCount(QueryType<T> queryFilter) {
 		jakarta.persistence.criteria.CriteriaQuery<Long> critieraQuery = critieraBuilder(Long.class, queryFilter);
-		critieraQuery.select(entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))));
+		critieraQuery.select(
+				entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))));
 		return entityManager.createQuery(critieraQuery);
 	}
 
@@ -53,27 +56,36 @@ public class CriteriaQuery<T>
 	public TypedQuery<Boolean> buildHasResult(QueryType<T> queryFilter) {
 		jakarta.persistence.criteria.CriteriaQuery<Boolean> critieraQuery = critieraBuilder(Boolean.class, queryFilter);
 		critieraQuery.select(entityManager.getCriteriaBuilder().greaterThan(
-				entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))), 0L));
+				entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))),
+				0L));
 		return entityManager.createQuery(critieraQuery);
 	}
-	
+
+	@Override
+	public TypedQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter) {
+		jakarta.persistence.criteria.CriteriaQuery<Tuple> critieraQuery = critieraBuilder(Tuple.class, queryFilter);
+		critieraQuery.select(entityManager.getCriteriaBuilder().tuple()); //TODO
+
+		return entityManager.createQuery(critieraQuery);
+	}
+
 	@Override
 	public boolean filterValidation(Field field) {
-		if(!field.isAnnotationPresent(Filter.class)) {
+		if (!field.isAnnotationPresent(Filter.class)) {
 			return false;
 		}
 		Filter filter = field.getAnnotation(Filter.class);
 		return !StringUtils.isEmpty(filter.path());
 	}
-	
+
 	@Override
 	public boolean canFetch() {
 		return true;
-	}	
+	}
 
 	@SuppressWarnings("hiding")
-	private <R, T> jakarta.persistence.criteria.CriteriaQuery<R> critieraBuilder(
-			Class<R> resultClass, QueryType<T> queryFilter) {
+	private <R, T> jakarta.persistence.criteria.CriteriaQuery<R> critieraBuilder(Class<R> resultClass,
+			QueryType<T> queryFilter) {
 		QueryContext ctx = new QueryContext(entityManager.getCriteriaBuilder(), alias);
 		jakarta.persistence.criteria.CriteriaQuery<R> criteriaQuery = entityManager.getCriteriaBuilder()
 				.createQuery(resultClass);
@@ -105,7 +117,7 @@ public class CriteriaQuery<T>
 		// WHERE
 		List<Predicate> wherePredicate = new ArrayList<>();
 		Map<String, List<Field>> disjunctionMap = new HashMap<>();
-		for (Field conditionField : QueryUtils.getParameterFields(this,queryFilter.getClass())) {
+		for (Field conditionField : QueryUtils.getParameterFields(this, queryFilter.getClass())) {
 			Filter filter = conditionField.getAnnotation(Filter.class);
 			if (QueryUtils.isParameterActive(queryFilter, conditionField)) {
 				if (StringUtils.isNotEmpty(filter.disjunction())) {

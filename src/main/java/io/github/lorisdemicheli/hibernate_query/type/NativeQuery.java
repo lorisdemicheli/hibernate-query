@@ -8,12 +8,15 @@ import io.github.lorisdemicheli.hibernate_query.QueryType;
 import io.github.lorisdemicheli.hibernate_query.annotation.CountQuery;
 import io.github.lorisdemicheli.hibernate_query.annotation.Filter;
 import io.github.lorisdemicheli.hibernate_query.annotation.HasResultQuery;
+import io.github.lorisdemicheli.hibernate_query.annotation.TransformQuery;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
 
 public class NativeQuery<T> extends AbstractQuery<T,
 	org.hibernate.query.NativeQuery<T>,
 	org.hibernate.query.NativeQuery<Long>,
-	org.hibernate.query.NativeQuery<Boolean>> {
+	org.hibernate.query.NativeQuery<Boolean>,
+	org.hibernate.query.NativeQuery<Tuple>> {
 
 	public NativeQuery(EntityManager entityManager) {
 		super(entityManager);
@@ -40,6 +43,13 @@ public class NativeQuery<T> extends AbstractQuery<T,
 		Session session = entityManager.unwrap(Session.class);
 		return session.createNativeQuery(hasResultQuery.value(), Boolean.class);
 	}
+	
+	@Override
+	public org.hibernate.query.NativeQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter) {
+		TransformQuery transformQuery = queryFilter.getClass().getAnnotation(TransformQuery.class);
+		Session session = entityManager.unwrap(Session.class);
+		return session.createNativeQuery(transformQuery.value(), Tuple.class);
+	}
 
 	@Override
 	public boolean filterValidation(Field field) {
@@ -50,4 +60,5 @@ public class NativeQuery<T> extends AbstractQuery<T,
 	public boolean canFetch() {
 		return false;
 	}
+
 }

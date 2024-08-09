@@ -7,13 +7,16 @@ import io.github.lorisdemicheli.hibernate_query.annotation.CountQuery;
 import io.github.lorisdemicheli.hibernate_query.annotation.Filter;
 import io.github.lorisdemicheli.hibernate_query.annotation.HasResultQuery;
 import io.github.lorisdemicheli.hibernate_query.annotation.Query;
+import io.github.lorisdemicheli.hibernate_query.annotation.TransformQuery;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 
 public class JpqlQuery<T> extends AbstractQuery<T,
 	TypedQuery<T>,
 	TypedQuery<Long>,
-	TypedQuery<Boolean>> {
+	TypedQuery<Boolean>,
+	TypedQuery<Tuple>> {
 
 	public JpqlQuery(EntityManager entityManager) {
 		super(entityManager);
@@ -38,6 +41,12 @@ public class JpqlQuery<T> extends AbstractQuery<T,
 	}
 	
 	@Override
+	public TypedQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter) {
+		TransformQuery transformQuery = queryFilter.getClass().getAnnotation(TransformQuery.class);
+		return entityManager.createQuery(transformQuery.value(), Tuple.class);
+	}
+	
+	@Override
 	public boolean filterValidation(Field field) {
 		return field.isAnnotationPresent(Filter.class);
 	}
@@ -46,4 +55,6 @@ public class JpqlQuery<T> extends AbstractQuery<T,
 	public boolean canFetch() {
 		return true;
 	}
+
+	
 }
