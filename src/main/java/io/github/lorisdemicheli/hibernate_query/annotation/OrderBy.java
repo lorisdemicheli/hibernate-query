@@ -3,6 +3,7 @@ package io.github.lorisdemicheli.hibernate_query.annotation;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -12,6 +13,7 @@ import java.lang.annotation.Target;
  */
 @Target(TYPE)
 @Retention(RUNTIME)
+@Repeatable(OrderBy.List.class)
 public @interface OrderBy {
 	String value();
 	boolean asc() default true;
@@ -19,6 +21,6 @@ public @interface OrderBy {
 	@Target(TYPE)
 	@Retention(RUNTIME)
 	@interface List {
-		OrderBy[] ordersBy();
+		OrderBy[] value();
 	}
 }

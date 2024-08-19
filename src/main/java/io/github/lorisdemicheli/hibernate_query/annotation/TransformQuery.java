@@ -6,8 +6,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Retention(RUNTIME)
+/**
+ * 
+ * @author Loris Demicheli
+ */
 @Target(TYPE)
+@Retention(RUNTIME)
 public @interface TransformQuery {
 	String value();
 

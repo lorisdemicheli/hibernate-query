@@ -64,7 +64,7 @@ public class CriteriaQuery<T>
 	@Override
 	public TypedQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter) {
 		jakarta.persistence.criteria.CriteriaQuery<Tuple> critieraQuery = critieraBuilder(Tuple.class, queryFilter);
-		critieraQuery.select(entityManager.getCriteriaBuilder().tuple()); //TODO
+		critieraQuery.select(entityManager.getCriteriaBuilder().tuple()); //TODO create transform with formula
 
 		return entityManager.createQuery(critieraQuery);
 	}
@@ -158,7 +158,7 @@ public class CriteriaQuery<T>
 		Join joinSingle = classQuery.getAnnotation(Join.class);
 		List<Join> joins = new ArrayList<>();
 		if (joinList != null) {
-			joins.addAll(Arrays.asList(joinList.joins()));
+			joins.addAll(Arrays.asList(joinList.value()));
 		} else if (joinSingle != null) {
 			joins.add(joinSingle);
 		}
@@ -171,7 +171,7 @@ public class CriteriaQuery<T>
 		GroupBy groupBySingle = classQuery.getAnnotation(GroupBy.class);
 		List<GroupBy> groupsBy = new ArrayList<>();
 		if (groupByList != null) {
-			groupsBy.addAll(Arrays.asList(groupByList.groupsBy()));
+			groupsBy.addAll(Arrays.asList(groupByList.value()));
 		} else if (groupBySingle != null) {
 			groupsBy.add(groupBySingle);
 		}
@@ -184,7 +184,7 @@ public class CriteriaQuery<T>
 		OrderBy orderBySingle = classQuery.getAnnotation(OrderBy.class);
 		List<OrderBy> ordersBy = new ArrayList<>();
 		if (orderByList != null) {
-			ordersBy.addAll(Arrays.asList(orderByList.ordersBy()));
+			ordersBy.addAll(Arrays.asList(orderByList.value()));
 		} else if (orderBySingle != null) {
 			ordersBy.add(orderBySingle);
 		}

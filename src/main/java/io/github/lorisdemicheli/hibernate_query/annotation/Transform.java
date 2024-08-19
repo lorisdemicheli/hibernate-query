@@ -6,8 +6,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Retention(RUNTIME)
+import io.github.lorisdemicheli.hibernate_query.Function;
+import io.github.lorisdemicheli.hibernate_query.QueryFunctionTransform;
+
+/**
+ * 
+ * @author Loris Demicheli
+ */
 @Target(FIELD)
+@Retention(RUNTIME)
 public @interface Transform {
-	String name() default "";
+	String name();
+	Function function() default Function.PATH;
+	Class<? extends QueryFunctionTransform> customFunction() default Function.class;
 }

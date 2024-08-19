@@ -8,6 +8,10 @@ import java.lang.annotation.Target;
 
 import io.github.lorisdemicheli.hibernate_query.Expression;
 
+/**
+ * 
+ * @author Loris Demicheli
+ */
 @Retention(RUNTIME)
 @Target(FIELD)
 public @interface Filter {

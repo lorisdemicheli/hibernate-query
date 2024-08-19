@@ -129,7 +129,7 @@ public class QueryBuilder {
 		Fetch fetchSingle = classQuery.getAnnotation(Fetch.class);
 		List<Fetch> fetchs = new ArrayList<>();
 		if (fetchList != null) {
-			fetchs.addAll(Arrays.asList(fetchList.fetchs()));
+			fetchs.addAll(Arrays.asList(fetchList.value()));
 		} else if (fetchSingle != null) {
 			fetchs.add(fetchSingle);
 		}

@@ -3,6 +3,8 @@ package io.github.lorisdemicheli.hibernate_query;
 import java.util.List;
 import java.util.stream.Stream;
 
+import io.github.lorisdemicheli.hibernate_query.QueryFunctionTransformImpl.Test;
+import io.github.lorisdemicheli.hibernate_query.annotation.Transform;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
