@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 
 import io.github.lorisdemicheli.hibernate_query.QueryType;
 import io.github.lorisdemicheli.hibernate_query.annotation.Distinct;
@@ -16,25 +17,27 @@ import io.github.lorisdemicheli.hibernate_query.annotation.Filter;
 import io.github.lorisdemicheli.hibernate_query.annotation.GroupBy;
 import io.github.lorisdemicheli.hibernate_query.annotation.Join;
 import io.github.lorisdemicheli.hibernate_query.annotation.OrderBy;
+import io.github.lorisdemicheli.hibernate_query.annotation.Transform;
+import io.github.lorisdemicheli.hibernate_query.exception.TransformException;
 import io.github.lorisdemicheli.hibernate_query.utils.QueryContext;
 import io.github.lorisdemicheli.hibernate_query.utils.QueryUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 
 public class CriteriaQuery<T>
 		extends AbstractQuery<T, TypedQuery<T>, TypedQuery<Long>, TypedQuery<Boolean>, TypedQuery<Tuple>> {
 
-	private Map<String, From<?, ?>> alias;
+	private QueryContext ctx;
 
 	public CriteriaQuery(EntityManager entityManager) {
 		super(entityManager);
-		alias = new HashMap<>();
+		ctx = new QueryContext(entityManager.getCriteriaBuilder(), new HashMap<>());
 	}
 
 	@Override
@@ -48,24 +51,24 @@ public class CriteriaQuery<T>
 	public TypedQuery<Long> buildCount(QueryType<T> queryFilter) {
 		jakarta.persistence.criteria.CriteriaQuery<Long> critieraQuery = critieraBuilder(Long.class, queryFilter);
 		critieraQuery.select(
-				entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))));
+				ctx.criteriaBuilder().count(ctx.alias().get(QueryUtils.getRootAlias(queryFilter.getClass()))));
 		return entityManager.createQuery(critieraQuery);
 	}
 
 	@Override
 	public TypedQuery<Boolean> buildHasResult(QueryType<T> queryFilter) {
 		jakarta.persistence.criteria.CriteriaQuery<Boolean> critieraQuery = critieraBuilder(Boolean.class, queryFilter);
-		critieraQuery.select(entityManager.getCriteriaBuilder().greaterThan(
-				entityManager.getCriteriaBuilder().count(alias.get(QueryUtils.getRootAlias(queryFilter.getClass()))),
+		critieraQuery.select(ctx.criteriaBuilder().greaterThan(
+				ctx.criteriaBuilder().count(ctx.alias().get(QueryUtils.getRootAlias(queryFilter.getClass()))),
 				0L));
 		return entityManager.createQuery(critieraQuery);
 	}
 
 	@Override
-	public TypedQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter) {
+	public <TR> TypedQuery<Tuple> buildTransformSelect(QueryType<T> queryFilter, Class<TR> transformClass) {
 		jakarta.persistence.criteria.CriteriaQuery<Tuple> critieraQuery = critieraBuilder(Tuple.class, queryFilter);
-		critieraQuery.select(entityManager.getCriteriaBuilder().tuple()); //TODO create transform with formula
-
+		List<Selection<?>> trasformSelection = transformSelection(FieldUtils.getFieldsListWithAnnotation(transformClass, Transform.class));
+		critieraQuery.select(ctx.criteriaBuilder().tuple(trasformSelection)); 
 		return entityManager.createQuery(critieraQuery);
 	}
 
@@ -86,14 +89,14 @@ public class CriteriaQuery<T>
 	@SuppressWarnings("hiding")
 	private <R, T> jakarta.persistence.criteria.CriteriaQuery<R> critieraBuilder(Class<R> resultClass,
 			QueryType<T> queryFilter) {
-		QueryContext ctx = new QueryContext(entityManager.getCriteriaBuilder(), alias);
-		jakarta.persistence.criteria.CriteriaQuery<R> criteriaQuery = entityManager.getCriteriaBuilder()
+		
+		jakarta.persistence.criteria.CriteriaQuery<R> criteriaQuery = ctx.criteriaBuilder()
 				.createQuery(resultClass);
 		Root<T> itemRoot = criteriaQuery.from(queryFilter.getType());
 
 		// ROOT
 		String rootAlias = QueryUtils.getRootAlias(queryFilter.getClass());
-		alias.put(rootAlias, itemRoot);
+		ctx.alias().put(rootAlias, itemRoot);
 		itemRoot.alias(rootAlias);
 
 		// DISTINCT
@@ -109,9 +112,9 @@ public class CriteriaQuery<T>
 			}
 			String classTo = split[0];
 			String attribute = split[1];
-			jakarta.persistence.criteria.Join<?, ?> itemJoin = alias.get(classTo).join(attribute, join.type());
+			jakarta.persistence.criteria.Join<?, ?> itemJoin = ctx.alias().get(classTo).join(attribute, join.type());
 			itemJoin.alias(join.alias().value());
-			alias.put(join.alias().value(), itemJoin);
+			ctx.alias().put(join.alias().value(), itemJoin);
 		}
 
 		// WHERE
@@ -199,5 +202,17 @@ public class CriteriaQuery<T>
 				return ctx.criteriaBuilder().desc(QueryUtils.aliasPath(ctx, o.value()));
 			}
 		}).toList();
+	}
+	
+	private List<Selection<?>> transformSelection(List<Field> fields) {
+		List<Selection<?>> selections = new ArrayList<>();
+		for(Field field : fields) {
+			Transform transformAnnotation = field.getAnnotation(Transform.class);
+			if(!transformAnnotation.function().validate(ctx, transformAnnotation)) {
+				throw new TransformException(String.format("Malformed transformation %s",transformAnnotation.name()));
+			}
+			selections.add(transformAnnotation.function().transform(ctx, transformAnnotation));
+		}
+		return selections;
 	}
 }

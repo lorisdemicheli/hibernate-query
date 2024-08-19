@@ -7,4 +7,5 @@ import jakarta.persistence.criteria.Selection;
 public interface QueryFunctionTransform {
 
 	public Selection<?> transform(QueryContext context, Transform select);
+	public boolean validate(QueryContext context, Transform select);
 }

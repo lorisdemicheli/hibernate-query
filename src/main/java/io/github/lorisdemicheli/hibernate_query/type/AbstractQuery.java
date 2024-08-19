@@ -25,7 +25,7 @@ public abstract class AbstractQuery<R,
 	
 	public abstract HRQ buildHasResult(QueryType<R> queryFilter);
 	
-	public abstract TQ buildTransformSelect(QueryType<R> queryFilter);
+	public abstract <TR> TQ buildTransformSelect(QueryType<R> queryFilter, Class<TR> trasformClass);
 	
 	public abstract boolean filterValidation(Field field);
 	

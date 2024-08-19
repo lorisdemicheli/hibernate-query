@@ -87,7 +87,7 @@ public class QueryBuilder {
 		return query;
 	}
 
-	public <T> TypedQuery<Tuple> buildTrasformSelect(QueryType<T> queryFilter) {
+	public <T,R> TypedQuery<Tuple> buildTrasformSelect(QueryType<T> queryFilter, Class<R> trasformClass) {
 		AbstractQuery<T, ? extends TypedQuery<T>, ? extends TypedQuery<Long>, ? extends TypedQuery<Boolean>, ? extends TypedQuery<Tuple>> abstractQuery;
 		TransformQuery transformQuery = queryFilter.getClass().getAnnotation(TransformQuery.class);
 		if (transformQuery != null) {
@@ -99,7 +99,8 @@ public class QueryBuilder {
 		} else {
 			abstractQuery = new CriteriaQuery<T>(em);
 		}
-		TypedQuery<Tuple> query = abstractQuery.buildTransformSelect(queryFilter);
+		
+		TypedQuery<Tuple> query = abstractQuery.buildTransformSelect(queryFilter,trasformClass);
 		setParameters(query, abstractQuery, queryFilter);
 		return query;
 	}

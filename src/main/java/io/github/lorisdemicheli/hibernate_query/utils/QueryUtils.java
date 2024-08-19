@@ -73,6 +73,10 @@ public class QueryUtils {
 		return ret;
 	}
 	
+	public static <C> Path<C> aliasPath(QueryContext ctx, String complexAttribute, Class<C> castClass) {
+		return (Path<C>) aliasPath(ctx, complexAttribute).as(castClass);
+	}
+	
 	@SuppressWarnings("rawtypes")
 	public static String getRootAlias(Class<? extends QueryType> classQuery) {
 		String rootAlias;
